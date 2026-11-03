@@ -245,14 +245,17 @@ The workflow at `.github/workflows/playwright.yml` runs on push/PR:
 2. **Allure report job** — merges shard results and publishes HTML report as artifact
 3. **Docker publish job** — builds and pushes multi-arch image to GHCR on merge to `main`
 
-Secrets required in GitHub repository settings:
+**Before the workflow can pass, add these secrets in your GitHub repository:**
+`Settings → Secrets and variables → Actions → New repository secret`
 
-```
-STANDARD_USERNAME
-PASSWORD
-LOCKED_OUT_USER
-PETSTORE_API_KEY
-```
+| Secret | Description |
+|---|---|
+| `STANDARD_USERNAME` | Saucedemo standard user login |
+| `PASSWORD` | Saucedemo password |
+| `LOCKED_OUT_USER` | Saucedemo locked-out user login |
+| `PETSTORE_API_KEY` | Petstore API key (any non-empty string is accepted) |
+
+> Without these secrets the CI workflow will fail on the UI and API test steps.
 
 ---
 
