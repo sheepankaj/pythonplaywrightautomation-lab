@@ -12,7 +12,7 @@ Two modes:
      No Allure CLI or Java needed. Use after downloading the 'allure-report'
      artifact from GitHub Actions and extracting it locally.
 
-       python scripts/show_allure_report.py --report C:/Downloads/allure-report
+       python scripts/show_allure_report.py --report ~/Downloads/allure-report
 """
 
 import argparse
@@ -49,15 +49,37 @@ def _find_java_home() -> str | None:
     return None
 
 
+def _find_index_html(base: pathlib.Path) -> pathlib.Path | None:
+    """
+    Find index.html inside base, tolerating one extra nesting level.
+    GitHub Actions zips sometimes extract as artifact-name/artifact-name/index.html.
+    """
+    if (base / "index.html").exists():
+        return base
+    # One level deeper — common when Windows extractor adds an extra folder
+    for child in base.iterdir():
+        if child.is_dir() and (child / "index.html").exists():
+            return child
+    return None
+
+
 def serve_static_report(report_dir: pathlib.Path) -> None:
     """Serve a pre-built allure-report HTML directory over HTTP (no CLI/Java needed)."""
-    if not (report_dir / "index.html").exists():
-        print(f"No index.html found in {report_dir}. Is this an extracted allure-report artifact?")
+    if not report_dir.exists():
+        print(f"Directory not found: {report_dir}")
         sys.exit(1)
 
-    os.chdir(report_dir)
+    root = _find_index_html(report_dir)
+    if root is None:
+        contents = [p.name for p in report_dir.iterdir()] if report_dir.exists() else []
+        print(f"Could not find index.html in {report_dir} or its subdirectories.")
+        print(f"Contents of {report_dir}: {contents or '(empty)'}")
+        print("Make sure you have fully extracted the allure-report artifact zip.")
+        sys.exit(1)
+
+    os.chdir(root)
     url = f"http://localhost:{HTTP_PORT}/index.html"
-    print(f"Serving pre-built Allure report from: {report_dir}")
+    print(f"Serving pre-built Allure report from: {root}")
     print(f"Opening at: {url}")
     print("Press Ctrl+C to stop the server.")
 

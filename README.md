@@ -191,13 +191,16 @@ python scripts/show_allure_report.py    # starts server + opens browser automati
 
 ### Allure report from CI artifact
 
-After a GitHub Actions run, download the **`allure-report`** artifact and extract it, then serve it with:
+After a GitHub Actions run, download the **`allure-report`** artifact, extract the zip, then serve it:
 
 ```bash
-python scripts/show_allure_report.py --report C:/path/to/extracted/allure-report
+# ~ expands to your home directory on Windows, Mac, and Linux
+python scripts/show_allure_report.py --report ~/Downloads/allure-report
 ```
 
-> Do **not** open `index.html` directly in Chrome — Allure requires an HTTP server to load its data files (opening via `file://` causes a 500 error).
+The script auto-detects `index.html` even if the zip extracted into a nested subfolder. Chrome opens automatically at `http://localhost:9324`.
+
+> **Do not** open `index.html` directly in Chrome — Allure requires an HTTP server to load its data files. Opening via `file://` causes a `500 Failed to fetch` error.
 
 ---
 
