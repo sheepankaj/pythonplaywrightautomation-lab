@@ -1,0 +1,64 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Pytest: All Tests (Headless)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["tests/"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Pytest: All Tests (Headed)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["tests/", "--headed"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Pytest: UI Tests Only (Headed)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["tests/ui/", "--headed"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Pytest: API Tests Only",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["tests/api/"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Pytest: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["${file}", "--headed", "-v"],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Show Test Report (pytest-html)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/show_report.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Show Allure Report",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/show_allure_report.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}

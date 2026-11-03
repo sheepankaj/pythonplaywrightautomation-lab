@@ -1,0 +1,37 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+
+# Pytest
+.pytest_cache/
+
+# Ruff
+.ruff_cache/
+
+# Reports (generated on every run — not committed)
+reports/
+test-results/
+
+# Playwright
+playwright/.auth/
+.playwright-mcp/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+
+# Logs
+*.log
+
+# Node (if npm is used locally e.g. for allure-commandline)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

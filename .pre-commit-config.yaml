@@ -1,0 +1,12 @@
+# Pre-commit hooks — Python equivalent of Husky
+# Setup: pre-commit install
+# Manual run: pre-commit run --all-files
+# Docs: https://pre-commit.com
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.13
+    hooks:
+      - id: ruff            # lint + auto-fix
+        args: [--fix]
+      - id: ruff-format     # format (like Prettier)
