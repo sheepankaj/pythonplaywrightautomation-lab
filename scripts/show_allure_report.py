@@ -1,30 +1,41 @@
 """
-Serve the Allure report via a local server and open it in the default browser.
-Equivalent to: npx playwright show-report (but for Allure)
+Serve the Allure report in the default browser.
 
-Requirements:
-  Allure CLI:  npm install -g allure-commandline
-  Java 11+:    winget install --id Microsoft.OpenJDK.17
+Two modes:
 
-Usage: python scripts/show_allure_report.py
+  1. Local results (default) — uses 'allure serve' on reports/allure-results/
+     Requires: Allure CLI + Java (see README for install steps)
+
+       python scripts/show_allure_report.py
+
+  2. Pre-built report from CI artifact — serves any allure-report directory over HTTP.
+     No Allure CLI or Java needed. Use after downloading the 'allure-report'
+     artifact from GitHub Actions and extracting it locally.
+
+       python scripts/show_allure_report.py --report C:/Downloads/allure-report
 """
 
+import argparse
+import http.server
 import os
 import pathlib
 import shutil
+import socketserver
 import subprocess
 import sys
+import threading
+import webbrowser
 
-RESULTS_DIR = pathlib.Path(__file__).parent.parent / "reports" / "allure-results"
+DEFAULT_RESULTS_DIR = pathlib.Path(__file__).parent.parent / "reports" / "allure-results"
 JAVA_HOME_CANDIDATES = [
     r"C:\Program Files\Microsoft\jdk-17.0.21.21-hotspot",
     r"C:\Program Files\Eclipse Adoptium",
     r"C:\Program Files\Java",
 ]
+HTTP_PORT = 9324
 
 
 def _find_java_home() -> str | None:
-    """Return a clean JAVA_HOME path (no trailing slash), or None if not found."""
     existing = os.environ.get("JAVA_HOME", "").rstrip("\\/")
     if existing and pathlib.Path(existing, "bin", "java.exe").exists():
         return existing
@@ -38,35 +49,68 @@ def _find_java_home() -> str | None:
     return None
 
 
-if not RESULTS_DIR.exists() or not any(RESULTS_DIR.iterdir()):
-    print(f"No Allure results found at {RESULTS_DIR}. Run pytest first.")
-    sys.exit(1)
+def serve_static_report(report_dir: pathlib.Path) -> None:
+    """Serve a pre-built allure-report HTML directory over HTTP (no CLI/Java needed)."""
+    if not (report_dir / "index.html").exists():
+        print(f"No index.html found in {report_dir}. Is this an extracted allure-report artifact?")
+        sys.exit(1)
 
-if shutil.which("allure") is None:
-    print("Allure CLI not found. Install it:")
-    print("  npm install -g allure-commandline")
-    sys.exit(1)
+    os.chdir(report_dir)
+    url = f"http://localhost:{HTTP_PORT}/index.html"
+    print(f"Serving pre-built Allure report from: {report_dir}")
+    print(f"Opening at: {url}")
+    print("Press Ctrl+C to stop the server.")
 
-java_home = _find_java_home()
-if java_home is None:
-    print("Java not found. Install it:")
-    print("  winget install --id Microsoft.OpenJDK.17")
-    sys.exit(1)
+    with socketserver.TCPServer(("", HTTP_PORT), http.server.SimpleHTTPRequestHandler) as httpd:
+        threading.Timer(0.5, lambda: webbrowser.open(url)).start()
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nAllure server stopped.")
 
-env = os.environ.copy()
-env["JAVA_HOME"] = java_home
-env["PATH"] = str(pathlib.Path(java_home) / "bin") + os.pathsep + env.get("PATH", "")
 
-print(f"Using JAVA_HOME: {java_home}")
-print(f"Opening Allure report from {RESULTS_DIR} ...")
-print("Press Ctrl+C to stop the server.")
+def serve_allure_results(results_dir: pathlib.Path) -> None:
+    """Generate and serve Allure report from raw results using Allure CLI."""
+    if not results_dir.exists() or not any(results_dir.iterdir()):
+        print(f"No Allure results found at {results_dir}. Run pytest first.")
+        sys.exit(1)
 
-try:
-    # shell=True is required on Windows to run .cmd files (allure is allure.cmd)
-    subprocess.run(
-        f'allure serve "{RESULTS_DIR}"',
-        env=env,
-        shell=True,
+    if shutil.which("allure") is None:
+        print("Allure CLI not found. Install it:")
+        print("  npm install -g allure-commandline")
+        sys.exit(1)
+
+    java_home = _find_java_home()
+    if java_home is None:
+        print("Java not found. Install it:")
+        print("  winget install --id Microsoft.OpenJDK.17")
+        sys.exit(1)
+
+    env = os.environ.copy()
+    env["JAVA_HOME"] = java_home
+    env["PATH"] = str(pathlib.Path(java_home) / "bin") + os.pathsep + env.get("PATH", "")
+
+    print(f"Using JAVA_HOME: {java_home}")
+    print(f"Opening Allure report from {results_dir} ...")
+    print("Press Ctrl+C to stop the server.")
+
+    try:
+        subprocess.run(f'allure serve "{results_dir}"', env=env, shell=True)
+    except KeyboardInterrupt:
+        print("\nAllure server stopped.")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Open the Allure report in a browser.")
+    parser.add_argument(
+        "--report",
+        metavar="DIR",
+        help="Path to a pre-built allure-report directory (e.g. downloaded from CI). "
+        "Served over HTTP — no Allure CLI or Java required.",
     )
-except KeyboardInterrupt:
-    print("\nAllure server stopped.")
+    args = parser.parse_args()
+
+    if args.report:
+        serve_static_report(pathlib.Path(args.report).expanduser().resolve())
+    else:
+        serve_allure_results(DEFAULT_RESULTS_DIR)

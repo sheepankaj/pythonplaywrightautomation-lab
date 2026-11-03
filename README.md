@@ -182,12 +182,22 @@ pytest                         # generates reports/report.html
 python scripts/show_report.py  # opens at http://localhost:9323/report.html
 ```
 
-### Allure report
+### Allure report (local)
 
 ```bash
 pytest                                  # generates reports/allure-results/
 python scripts/show_allure_report.py    # starts server + opens browser automatically
 ```
+
+### Allure report from CI artifact
+
+After a GitHub Actions run, download the **`allure-report`** artifact and extract it, then serve it with:
+
+```bash
+python scripts/show_allure_report.py --report C:/path/to/extracted/allure-report
+```
+
+> Do **not** open `index.html` directly in Chrome — Allure requires an HTTP server to load its data files (opening via `file://` causes a 500 error).
 
 ---
 
